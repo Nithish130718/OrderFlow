@@ -3,14 +3,16 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/smtp"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/segmentio/kafka-go"
 
 	"notification-service/db"
-	"notification-service/models"
 )
 
 func StartConsumer() {
@@ -42,7 +44,6 @@ func consumeTopic(broker, topic, groupID string, handler func([]byte)) {
 			log.Printf("[Notification-Service] Error reading from topic '%s': %v", topic, err)
 			continue
 		}
-		log.Printf("[Notification-Service] Received event from topic '%s': %s", topic, string(msg.Value))
 		handler(msg.Value)
 	}
 }
@@ -57,12 +58,10 @@ func handleOrderCreated(data []byte) {
 	orderID := int(getFloat(event, "order_id"))
 	userID := int(getFloat(event, "user_id"))
 
-	// Simulate email notification
-	log.Printf("📧 [EMAIL] To: user_%d@example.com | Subject: Order #%d Confirmed | Your order has been received and is being processed.", userID, orderID)
-	// Simulate SMS notification
-	log.Printf("📱 [SMS] To: +1-555-0%d | Message: Order #%d placed successfully! We'll notify you when it ships.", userID, orderID)
-
-	saveNotification(orderID, "order_confirmation", "sent")
+	saveNotification(orderID, 0, "Email", "info", "Order Confirmation Sent",
+		fmt.Sprintf("Order #%d confirmation has been queued for customer %d.", orderID, userID), "sent")
+	saveNotification(orderID, 0, "System", "info", "New Order Received",
+		fmt.Sprintf("Order #%d is now visible in the live dashboard and order queue.", orderID), "sent")
 }
 
 func handleInventoryUpdated(data []byte) {
@@ -76,34 +75,79 @@ func handleInventoryUpdated(data []byte) {
 	productID := int(getFloat(event, "product_id"))
 	newStock := int(getFloat(event, "new_stock"))
 
-	log.Printf("📦 [INVENTORY] Order #%d: Product %d stock updated. Remaining stock: %d", orderID, productID, newStock)
+	saveNotification(orderID, productID, "System", "info", "Inventory Updated",
+		fmt.Sprintf("Inventory adjusted for product #%d. Remaining stock: %d.", productID, newStock), "sent")
 
-	if newStock < 20 {
-		log.Printf("⚠️  [ALERT] Low stock warning! Product %d has only %d units remaining.", productID, newStock)
-		saveNotification(orderID, "low_stock_alert", "sent")
+	if newStock <= 10 {
+		severity := "warning"
+		title := "Low Stock Alert"
+		message := fmt.Sprintf("Product #%d is below threshold with %d units remaining.", productID, newStock)
+		if newStock <= 3 {
+			severity = "critical"
+			title = "Critical Stock Alert"
+			message = fmt.Sprintf("Product #%d is critically low with only %d units remaining.", productID, newStock)
+		}
+
+		saveNotification(orderID, productID, "System", severity, title, message, "sent")
+		if severity == "critical" {
+			sendCriticalEmails(title, message)
+		}
 	}
-
-	saveNotification(orderID, "inventory_update", "sent")
 }
 
-func saveNotification(orderID int, notifType, status string) {
-	n := models.Notification{
-		OrderID: orderID,
-		Type:    notifType,
-		Status:  status,
-	}
-
+func saveNotification(orderID, productID int, notifType, severity, title, message, status string) {
 	_, err := db.DB.Exec(
-		"INSERT INTO notifications (order_id, type, status) VALUES ($1, $2, $3)",
-		n.OrderID, n.Type, n.Status,
+		`INSERT INTO notifications (order_id, product_id, type, severity, title, message, status, read)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE)`,
+		orderID, productID, notifType, severity, title, message, status,
 	)
 	if err != nil {
-		log.Printf("[Notification-Service] Failed to persist notification (order: %d, type: %s): %v",
-			orderID, notifType, err)
+		log.Printf("[Notification-Service] Failed to persist notification: %v", err)
+	}
+}
+
+func sendCriticalEmails(subject, body string) {
+	rows, err := db.DB.Query("SELECT email FROM emergency_contacts ORDER BY is_primary DESC, id ASC")
+	if err != nil {
+		log.Printf("[Notification-Service] Failed to load emergency contacts: %v", err)
 		return
 	}
-	log.Printf("[Notification-Service] Notification logged to DB — order: %d, type: %s, status: %s",
-		orderID, notifType, status)
+	defer rows.Close()
+
+	recipients := make([]string, 0)
+	for rows.Next() {
+		var email string
+		if scanErr := rows.Scan(&email); scanErr == nil {
+			recipients = append(recipients, email)
+		}
+	}
+	if len(recipients) == 0 {
+		return
+	}
+
+	host := os.Getenv("SMTP_HOST")
+	port := os.Getenv("SMTP_PORT")
+	user := os.Getenv("SMTP_USER")
+	pass := os.Getenv("SMTP_PASS")
+	from := os.Getenv("SMTP_FROM")
+	if host == "" || port == "" || user == "" || pass == "" || from == "" {
+		log.Printf("[Notification-Service] SMTP not configured. Critical alert intended for: %s", strings.Join(recipients, ", "))
+		return
+	}
+
+	auth := smtp.PlainAuth("", user, pass, host)
+	msg := []byte("To: " + strings.Join(recipients, ",") + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n" +
+		body + "\r\n")
+
+	if err := smtp.SendMail(host+":"+port, auth, from, recipients, msg); err != nil {
+		log.Printf("[Notification-Service] Failed to send critical emails: %v", err)
+		return
+	}
+
+	log.Printf("[Notification-Service] Critical alert emails sent to %s", strings.Join(recipients, ", "))
 }
 
 func getFloat(m map[string]interface{}, key string) float64 {

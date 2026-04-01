@@ -49,6 +49,7 @@ func main() {
 	r.POST("/orders", handlers.CreateOrder)
 	r.GET("/orders", handlers.ListOrders)
 	r.GET("/orders/:id", handlers.GetOrder)
+	r.GET("/customers", handlers.ListCustomers)
 
 	port := os.Getenv("PORT")
 	if port == "" {

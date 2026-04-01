@@ -1,6 +1,7 @@
 import './StatCard.css';
 
-export default function StatCard({ icon: Icon, label, value, change, color = 'blue', delay = 0 }) {
+export default function StatCard({ icon, label, value, change, color = 'blue', delay = 0 }) {
+    const Icon = icon;
     const isPositive = change >= 0;
 
     return (

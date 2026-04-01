@@ -37,7 +37,7 @@ func main() {
 	// CORS middleware
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -50,6 +50,8 @@ func main() {
 	r.GET("/health", handlers.HealthCheck)
 	r.GET("/inventory", handlers.ListInventory)
 	r.GET("/inventory/:product_id", handlers.GetInventory)
+	r.POST("/inventory", handlers.CreateProduct)
+	r.DELETE("/inventory/:product_id", handlers.DeleteProduct)
 
 	port := os.Getenv("PORT")
 	if port == "" {

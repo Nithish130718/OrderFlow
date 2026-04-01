@@ -17,7 +17,7 @@ const navItems = [
     { path: '/orders', icon: ShoppingCart, label: 'Orders' },
     { path: '/inventory', icon: Package, label: 'Inventory' },
     { path: '/notifications', icon: Bell, label: 'Notifications' },
-    { path: '/services', icon: Server, label: 'Services' },
+    { path: '/help', icon: Server, label: 'Help' },
 ];
 
 export default function Sidebar() {

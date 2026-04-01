@@ -2,12 +2,30 @@ package models
 
 import "time"
 
-type Inventory struct {
-	ProductID     int `json:"product_id" db:"product_id"`
-	StockQuantity int `json:"stock_quantity" db:"stock_quantity"`
+type Product struct {
+	ID          int       `json:"id" db:"id"`
+	Name        string    `json:"name" db:"name"`
+	SKU         string    `json:"sku" db:"sku"`
+	Category    string    `json:"category" db:"category"`
+	Description string    `json:"description" db:"description"`
+	Image       string    `json:"image" db:"image"`
+	Price       float64   `json:"price" db:"price"`
+	Stock       int       `json:"stock" db:"stock_quantity"`
+	Threshold   int       `json:"threshold" db:"threshold"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// InventoryInput is parsed from the order.created Kafka event
+type ProductInput struct {
+	Name        string  `json:"name" binding:"required"`
+	SKU         string  `json:"sku" binding:"required"`
+	Category    string  `json:"category" binding:"required"`
+	Description string  `json:"description"`
+	Image       string  `json:"image"`
+	Price       float64 `json:"price" binding:"required"`
+	Stock       int     `json:"stock" binding:"required,min=0"`
+	Threshold   int     `json:"threshold"`
+}
+
 type InventoryInput struct {
 	OrderID   int `json:"order_id"`
 	ProductID int `json:"product_id"`

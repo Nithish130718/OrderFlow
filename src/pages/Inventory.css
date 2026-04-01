@@ -2,14 +2,15 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    gap: 12px;
 }
 
 .inventory-page__search-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 18px;
-    margin-bottom: 16px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
     color: var(--text-muted);
     opacity: 0;
 }
@@ -18,164 +19,153 @@
     border: none;
     background: none;
     padding: 0;
-    font-size: 0.88rem;
+    font-size: 0.96rem;
     width: 100%;
 }
 
-.inventory-page__search-bar input:focus {
-    box-shadow: none;
-}
-
 .inventory-page__alerts {
-    background: rgba(239, 68, 68, 0.06);
-    border: 1px solid rgba(239, 68, 68, 0.15);
+    background: color-mix(in srgb, var(--accent-red) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-red) 22%, transparent);
     border-radius: var(--radius-md);
     padding: 16px 20px;
     margin-bottom: 20px;
     opacity: 0;
 }
 
-.inventory-page__alert-header {
+.inventory-page__alert-header,
+.inventory-page__alert-item,
+.inventory-page__product-top,
+.inventory-page__product-meta,
+.inventory-page__confirm-actions {
     display: flex;
     align-items: center;
+}
+
+.inventory-page__alert-header {
     gap: 8px;
     color: var(--accent-red);
     font-weight: 600;
-    font-size: 0.88rem;
     margin-bottom: 12px;
 }
 
 .inventory-page__alert-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
 }
 
 .inventory-page__alert-item {
-    display: flex;
-    align-items: center;
     gap: 8px;
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: var(--radius-sm);
-    font-size: 0.8rem;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.inventory-page__alert-item--critical,
-.inventory-page__alert-item--out {
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.inventory-page__alert-emoji {
-    font-size: 1rem;
-}
-
-.inventory-page__alert-name {
-    color: var(--text-secondary);
+    background: var(--bg-card);
 }
 
 .inventory-page__alert-stock {
-    font-weight: 600;
-    color: var(--accent-red);
+    font-weight: 700;
 }
 
 .inventory-page__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
 }
 
 .inventory-page__product {
-    padding: 20px;
+    padding: 22px;
     opacity: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .inventory-page__product-top {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
 }
 
 .inventory-page__product-emoji {
-    font-size: 2rem;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--accent-blue) 14%, transparent);
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .inventory-page__stock-tag {
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
 }
 
 .inventory-page__stock-tag--good {
-    background: rgba(16, 185, 129, 0.1);
+    background: color-mix(in srgb, var(--accent-green) 14%, transparent);
     color: var(--accent-green);
 }
 
 .inventory-page__stock-tag--low {
-    background: rgba(245, 158, 11, 0.1);
+    background: color-mix(in srgb, var(--accent-amber) 14%, transparent);
     color: var(--accent-amber);
 }
 
-.inventory-page__stock-tag--critical {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--accent-red);
-}
-
+.inventory-page__stock-tag--critical,
 .inventory-page__stock-tag--out {
-    background: rgba(239, 68, 68, 0.15);
+    background: color-mix(in srgb, var(--accent-red) 14%, transparent);
     color: var(--accent-red);
 }
 
 .inventory-page__product-name {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 6px;
-    line-height: 1.3;
+    font-size: 1.08rem;
+}
+
+.inventory-page__product-description {
+    color: var(--text-secondary);
+    min-height: 48px;
 }
 
 .inventory-page__product-meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.75rem;
+    gap: 10px;
+    font-size: 0.78rem;
     color: var(--text-muted);
-    margin-bottom: 12px;
 }
 
-.inventory-page__sku {
-    font-family: 'Courier New', monospace;
-    font-weight: 500;
-}
-
+.inventory-page__sku,
 .inventory-page__category {
+    padding: 4px 8px;
+    border-radius: 999px;
     background: var(--bg-glass);
-    padding: 2px 8px;
-    border-radius: 4px;
 }
 
-.inventory-page__product-price {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 14px;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.inventory-page__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.inventory-page__stats span {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.inventory-page__stats strong {
+    font-size: 0.95rem;
 }
 
 .inventory-page__stock-bar-wrap {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 2px;
+    height: 8px;
+    background: var(--bg-glass);
+    border-radius: 999px;
     overflow: hidden;
 }
 
 .inventory-page__stock-bar {
     height: 100%;
-    border-radius: 2px;
-    transition: width 0.6s ease;
+    border-radius: 999px;
 }
 
 .inventory-page__stock-bar--good {
@@ -186,28 +176,40 @@
     background: var(--accent-amber);
 }
 
-.inventory-page__stock-bar--critical {
-    background: var(--accent-red);
-}
-
+.inventory-page__stock-bar--critical,
 .inventory-page__stock-bar--out {
     background: var(--accent-red);
-    width: 0% !important;
 }
 
-.inventory-page__empty {
+.inventory-page__delete-btn {
+    margin-top: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--accent-red) 30%, transparent);
+    color: var(--accent-red);
+}
+
+.inventory-page__confirm {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 48px;
-    color: var(--text-muted);
-    margin-top: 20px;
+    gap: 16px;
+}
+
+.inventory-page__confirm-actions {
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 @media (max-width: 768px) {
     .inventory-page__header-row {
         flex-direction: column;
-        gap: 12px;
+    }
+
+    .inventory-page__stats {
+        grid-template-columns: 1fr;
     }
 }

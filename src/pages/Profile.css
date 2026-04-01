@@ -1,0 +1,105 @@
+.profile-page__grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 20px;
+}
+
+.profile-page__card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.profile-page__identity,
+.profile-page__card-header,
+.profile-page__contact-item,
+.profile-page__confirm-actions,
+.profile-page__input {
+    display: flex;
+    align-items: center;
+}
+
+.profile-page__identity {
+    gap: 16px;
+}
+
+.profile-page__avatar {
+    width: 78px;
+    height: 78px;
+    border-radius: 24px;
+    background: var(--gradient-primary);
+    display: grid;
+    place-items: center;
+    color: white;
+}
+
+.profile-page__identity p,
+.profile-page__identity span,
+.profile-page__card-header p,
+.profile-page__contact-item p {
+    color: var(--text-secondary);
+}
+
+.profile-page__card-header {
+    justify-content: space-between;
+}
+
+.profile-page__contact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-page__contact-item {
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    text-align: left;
+}
+
+.profile-page__form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-page__input {
+    gap: 10px;
+    padding: 0 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+}
+
+.profile-page__input input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding-left: 0;
+}
+
+.profile-page__checkbox {
+    display: flex;
+    gap: 10px;
+    color: var(--text-secondary);
+}
+
+.profile-page__confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.profile-page__confirm-actions {
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 900px) {
+    .profile-page__grid {
+        grid-template-columns: 1fr;
+    }
+}

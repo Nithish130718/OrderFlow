@@ -52,7 +52,7 @@ func handleOrderCreated(data []byte, publishFn func(topic string, payload interf
 
 	var currentStock int
 	err := db.DB.QueryRow(
-		"SELECT stock_quantity FROM inventory WHERE product_id = $1",
+		"SELECT stock_quantity FROM products WHERE id = $1",
 		event.ProductID,
 	).Scan(&currentStock)
 	if err != nil {
@@ -68,7 +68,7 @@ func handleOrderCreated(data []byte, publishFn func(topic string, payload interf
 
 	var newStock int
 	err = db.DB.QueryRow(
-		"UPDATE inventory SET stock_quantity = stock_quantity - $1 WHERE product_id = $2 RETURNING stock_quantity",
+		"UPDATE products SET stock_quantity = stock_quantity - $1, updated_at = NOW() WHERE id = $2 RETURNING stock_quantity",
 		event.Quantity, event.ProductID,
 	).Scan(&newStock)
 	if err != nil {

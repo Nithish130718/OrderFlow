@@ -14,6 +14,9 @@ const colorMap = {
     Email: 'blue',
     SMS: 'purple',
     System: 'amber',
+    warning: 'amber',
+    critical: 'red',
+    info: 'blue',
 };
 
 export default function StatusBadge({ status, size = 'md' }) {
