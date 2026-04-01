@@ -16,7 +16,6 @@
     transition: left var(--transition-base);
 }
 
-/* Search */
 .navbar__search {
     display: flex;
     align-items: center;
@@ -57,7 +56,6 @@
     color: var(--text-muted);
 }
 
-/* Actions */
 .navbar__actions {
     display: flex;
     align-items: center;

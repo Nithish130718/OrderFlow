@@ -62,14 +62,7 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            <div className="sidebar__footer">
-                {!collapsed && (
-                    <div className="sidebar__version">
-                        <span className="sidebar__version-dot" />
-                        v1.0.0 — Microservices
-                    </div>
-                )}
-            </div>
+
         </aside>
     );
 }

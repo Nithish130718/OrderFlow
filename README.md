@@ -1,16 +1,65 @@
-# React + Vite
+# OrderFlow
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack distributed order management system with a React frontend and a Go microservices backend.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Project Structure
 
-## React Compiler
+```
+OrderFlow/
+├── src/                    React + Vite frontend
+│   ├── components/
+│   ├── pages/
+│   └── ...
+├── backend/                Go microservices backend
+│   ├── order-service/
+│   ├── inventory-service/
+│   ├── notification-service/
+│   ├── docker-compose.yml
+│   └── README.md           ← Full backend setup guide
+├── package.json
+└── vite.config.js
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Quick Start
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Backend (Go microservices)
+
+Requires **Docker Desktop** — see [`backend/README.md`](./backend/README.md) for full setup.
+
+```powershell
+cd backend
+docker-compose up --build
+```
+
+Services available at:
+- Order Service → `http://localhost:8081`
+- Inventory Service → `http://localhost:8082`
+- Notification Service → `http://localhost:8083`
+
+### Frontend (React + Vite)
+
+Requires **Node.js** ([nodejs.org](https://nodejs.org)).
+
+```powershell
+npm install
+npm run dev
+```
+
+Frontend available at `http://localhost:5173`
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, Vanilla CSS |
+| Backend | Go 1.22, Gin framework |
+| Event Streaming | Apache Kafka |
+| Caching | Redis |
+| Database | PostgreSQL 15 |
+| Infrastructure | Docker, Docker Compose |

@@ -4,7 +4,6 @@
     justify-content: space-between;
 }
 
-/* Search */
 .inventory-page__search-bar {
     display: flex;
     align-items: center;
@@ -27,7 +26,6 @@
     box-shadow: none;
 }
 
-/* Alerts */
 .inventory-page__alerts {
     background: rgba(239, 68, 68, 0.06);
     border: 1px solid rgba(239, 68, 68, 0.15);
@@ -81,7 +79,6 @@
     color: var(--accent-red);
 }
 
-/* Grid */
 .inventory-page__grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

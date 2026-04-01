@@ -16,7 +16,6 @@
     font-weight: 600;
 }
 
-/* Filters */
 .notifications-page__filters {
     display: flex;
     gap: 6px;
@@ -49,7 +48,6 @@
     color: var(--accent-blue);
 }
 
-/* Timeline */
 .notifications-page__timeline {
     display: flex;
     flex-direction: column;
