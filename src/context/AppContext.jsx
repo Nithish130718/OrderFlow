@@ -87,7 +87,15 @@ export function AppProvider({ children }) {
       );
     },
     async markAllNotificationsRead() {
-      await api.markAllNotificationsRead();
+      try {
+        await api.markAllNotificationsRead();
+      } catch {
+        const unreadIds = notifications
+          .filter((item) => !item.read)
+          .map((item) => item.id);
+
+        await Promise.all(unreadIds.map((id) => api.markNotificationRead(id)));
+      }
       setNotifications((current) => current.map((item) => ({ ...item, read: true })));
     },
     async addEmergencyContact(payload) {
