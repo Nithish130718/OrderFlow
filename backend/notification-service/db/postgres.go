@@ -68,6 +68,33 @@ func migrate() {
 		log.Fatalf("[Notification-Service] Migration failed: %v", err)
 	}
 
+	compatibility := []string{
+		`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS product_id INTEGER NOT NULL DEFAULT 0;`,
+		`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS severity VARCHAR(50) NOT NULL DEFAULT 'info';`,
+		`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS title VARCHAR(180) NOT NULL DEFAULT 'Notification';`,
+		`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS message TEXT NOT NULL DEFAULT '';`,
+		`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS read BOOLEAN NOT NULL DEFAULT FALSE;`,
+		`UPDATE notifications
+		 SET
+			title = CASE
+				WHEN title = '' OR title = 'Notification' THEN INITCAP(REPLACE(type, '_', ' '))
+				ELSE title
+			END,
+			message = CASE
+				WHEN message = '' THEN 'Imported legacy notification record.'
+				ELSE message
+			END,
+			severity = CASE
+				WHEN severity = '' THEN 'info'
+				ELSE severity
+			END;`,
+	}
+	for _, statement := range compatibility {
+		if _, err := DB.Exec(statement); err != nil {
+			log.Fatalf("[Notification-Service] Compatibility migration failed: %v", err)
+		}
+	}
+
 	seed()
 	log.Println("[Notification-Service] Database migration completed")
 }

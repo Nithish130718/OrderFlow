@@ -71,7 +71,33 @@ func migrate() {
 		log.Fatalf("[Order-Service] Migration failed: %v", err)
 	}
 
+	compatibility := []string{
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER;`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) NOT NULL DEFAULT 'Credit Card';`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_code VARCHAR(40) NOT NULL DEFAULT '';`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) NOT NULL DEFAULT 0;`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal NUMERIC(10,2) NOT NULL DEFAULT 0;`,
+		`ALTER TABLE orders ADD COLUMN IF NOT EXISTS total NUMERIC(10,2) NOT NULL DEFAULT 0;`,
+		`DO $$
+		BEGIN
+			IF EXISTS (
+				SELECT 1 FROM information_schema.columns
+				WHERE table_name = 'orders' AND column_name = 'user_id'
+			) THEN
+				EXECUTE 'UPDATE orders SET customer_id = COALESCE(customer_id, user_id, 1)';
+			ELSE
+				EXECUTE 'UPDATE orders SET customer_id = COALESCE(customer_id, 1)';
+			END IF;
+		END $$;`,
+	}
+	for _, statement := range compatibility {
+		if _, err := DB.Exec(statement); err != nil {
+			log.Fatalf("[Order-Service] Compatibility migration failed: %v", err)
+		}
+	}
+
 	seed()
+	backfillOrders()
 	log.Println("[Order-Service] Database migration completed")
 }
 
@@ -107,6 +133,30 @@ func seed() {
 		if _, err := DB.Exec(statement); err != nil {
 			log.Fatalf("[Order-Service] Seed failed: %v", err)
 		}
+	}
+}
+
+func backfillOrders() {
+	statement := `
+		UPDATE orders o
+		SET
+			subtotal = CASE
+				WHEN o.subtotal = 0 THEN COALESCE(p.price, 0) * COALESCE(o.quantity, 1)
+				ELSE o.subtotal
+			END,
+			total = CASE
+				WHEN o.total = 0 THEN
+					CASE
+						WHEN o.subtotal = 0 THEN COALESCE(p.price, 0) * COALESCE(o.quantity, 1) - COALESCE(o.discount_amount, 0)
+						ELSE o.subtotal - COALESCE(o.discount_amount, 0)
+					END
+				ELSE o.total
+			END
+		FROM product_snapshots p
+		WHERE p.id = o.product_id;
+	`
+	if _, err := DB.Exec(statement); err != nil {
+		log.Fatalf("[Order-Service] Backfill failed: %v", err)
 	}
 }
 
