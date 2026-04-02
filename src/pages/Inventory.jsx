@@ -103,13 +103,13 @@ export default function Inventory() {
         {filtered.map((product, index) => (
           <div
             key={product.id}
-            className="glass-card inventory-page__product animate-fade-in-up"
+            className={`glass-card inventory-page__product inventory-page__product--${getStockLevel(product)} animate-fade-in-up`}
             style={{ animationDelay: `${0.05 * (index + 1)}s` }}
           >
             <div className="inventory-page__product-top">
               <span className="inventory-page__product-emoji">{product.image}</span>
               <span className={`inventory-page__stock-tag inventory-page__stock-tag--${getStockLevel(product)}`}>
-                {product.stock} in stock
+                {product.stock === 0 ? 'Out of stock' : `${product.stock} in stock`}
               </span>
             </div>
 

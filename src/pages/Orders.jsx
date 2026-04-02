@@ -291,7 +291,7 @@ export default function Orders() {
           </div>
 
           <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-            <Package size={16} /> Review Order
+            <Package size={16} /> Confirm Order
           </button>
         </form>
       </Modal>

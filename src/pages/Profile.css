@@ -13,9 +13,10 @@
 
 .profile-page__identity,
 .profile-page__card-header,
-.profile-page__contact-item,
 .profile-page__confirm-actions,
-.profile-page__input {
+.profile-page__input,
+.profile-page__contact-item,
+.profile-page__toolbar {
     display: flex;
     align-items: center;
 }
@@ -37,12 +38,21 @@
 .profile-page__identity p,
 .profile-page__identity span,
 .profile-page__card-header p,
-.profile-page__contact-item p {
+.profile-page__contact-main p {
     color: var(--text-secondary);
 }
 
-.profile-page__card-header {
+.profile-page__card-header,
+.profile-page__toolbar {
     justify-content: space-between;
+}
+
+.profile-page__warning {
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent-amber) 12%, transparent);
+    color: var(--accent-amber);
+    border: 1px solid color-mix(in srgb, var(--accent-amber) 28%, transparent);
 }
 
 .profile-page__contact-list {
@@ -52,12 +62,51 @@
 }
 
 .profile-page__contact-item {
+    gap: 10px;
+}
+
+.profile-page__contact-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
     padding: 14px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
     text-align: left;
+}
+
+.profile-page__contact-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-page__contact-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    background: var(--bg-glass);
+}
+
+.profile-page__contact-badge--primary {
+    color: var(--accent-green);
+    background: color-mix(in srgb, var(--accent-green) 14%, transparent);
+}
+
+.profile-page__delete {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--accent-red) 30%, transparent);
+    color: var(--accent-red);
+    display: grid;
+    place-items: center;
 }
 
 .profile-page__form {

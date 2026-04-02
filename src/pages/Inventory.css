@@ -79,6 +79,18 @@
     gap: 14px;
 }
 
+.inventory-page__product--out {
+    background: rgba(7, 10, 14, 0.92);
+    border-color: rgba(255, 255, 255, 0.06);
+    filter: grayscale(1);
+}
+
+.inventory-page__product--out .inventory-page__product-name,
+.inventory-page__product--out .inventory-page__product-description,
+.inventory-page__product--out .inventory-page__stats strong {
+    color: #cbd5e1;
+}
+
 .inventory-page__product-top {
     justify-content: space-between;
 }
@@ -178,7 +190,7 @@
 
 .inventory-page__stock-bar--critical,
 .inventory-page__stock-bar--out {
-    background: var(--accent-red);
+    background: #111827;
 }
 
 .inventory-page__delete-btn {
