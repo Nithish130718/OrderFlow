@@ -87,6 +87,21 @@ copy .env.example .env
 
 Update `.env` with your database and SMTP values as needed.
 
+Example:
+
+```env
+DB_USER=postgres
+DB_PASSWORD=postgres
+REDIS_PASSWORD=
+KAFKA_BROKERS=kafka:9092
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=your-email@gmail.com
+```
+
 ### 2. Start Backend Services
 
 From [`backend`](C:/Users/snk18/Desktop/Codes/OrderFlow/backend):
@@ -116,6 +131,12 @@ npm run dev
 Frontend:
 
 - `http://localhost:5173`
+
+Current frontend API configuration:
+
+- the frontend calls `http://localhost:8081`, `http://localhost:8082`, and `http://localhost:8083` directly
+- those base URLs are defined in [`src/lib/api.js`](C:/Users/snk18/Desktop/Codes/OrderFlow/src/lib/api.js)
+- if you deploy the services elsewhere, update that file or add environment-based frontend configuration
 
 ## Environment Variables
 
@@ -154,6 +175,10 @@ These are set in [`backend/docker-compose.yml`](C:/Users/snk18/Desktop/Codes/Ord
 - `REDIS_ADDR`
 - `GIN_MODE`
 - `INVENTORY_SERVICE_URL`
+
+### Frontend Environment Variables
+
+The current frontend does not require a separate `.env` file to run locally. API base URLs are hardcoded in [`src/lib/api.js`](C:/Users/snk18/Desktop/Codes/OrderFlow/src/lib/api.js).
 
 ## API Overview
 
@@ -201,6 +226,16 @@ Example stock update payload:
 }
 ```
 
+Example reserve payload:
+
+```json
+{
+  "order_id": 13,
+  "product_id": 8,
+  "quantity": 1
+}
+```
+
 ### Notification Service (`http://localhost:8083`)
 
 | Method | Endpoint | Description |
@@ -223,6 +258,15 @@ Example stock update payload:
 - `notification-service` consumes events, stores notification history, and sends critical stock emails when stock reaches `3` or below.
 - Seed data is inserted on first run so the app is not empty.
 
+### Databases and Topics
+
+- `orders_db`: used by `order-service`
+- `inventory_db`: used by `inventory-service`
+- `notifications_db`: used by `notification-service`
+- Kafka topics:
+  - `order.created`
+  - `inventory.updated`
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -237,5 +281,7 @@ Example stock update payload:
 ## Notes
 
 - Critical alert emails require valid SMTP credentials in `backend/.env`.
+- Critical alert emails are sent to all saved emergency contact emails, ordered with the primary contact first.
+- No authentication layer is enabled in the current local setup; all documented endpoints are open on localhost.
 - `docker compose down` keeps your database volumes.
 - `docker compose down -v` removes persisted PostgreSQL and Redis data.
