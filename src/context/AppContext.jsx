@@ -71,6 +71,11 @@ export function AppProvider({ children }) {
       await fetchAll();
       return response.product;
     },
+    async updateProductStock(id, payload) {
+      const response = await api.updateProductStock(id, payload);
+      await fetchAll();
+      return response.product;
+    },
     async deleteProduct(id) {
       await api.deleteProduct(id);
       await fetchAll();
@@ -80,6 +85,10 @@ export function AppProvider({ children }) {
       setNotifications((current) =>
         current.map((item) => (item.id === id ? { ...item, read: true } : item))
       );
+    },
+    async markAllNotificationsRead() {
+      await api.markAllNotificationsRead();
+      setNotifications((current) => current.map((item) => ({ ...item, read: true })));
     },
     async addEmergencyContact(payload) {
       await api.addEmergencyContact(payload);

@@ -5,6 +5,12 @@
     gap: 12px;
 }
 
+.notifications-page__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .notifications-page__unread-badge,
 .notifications-page__filter,
 .notifications-page__meta,
@@ -162,7 +168,8 @@
 
 @media (max-width: 768px) {
     .notifications-page__top-row,
-    .notifications-page__header-row {
+    .notifications-page__header-row,
+    .notifications-page__header-actions {
         flex-direction: column;
     }
 }

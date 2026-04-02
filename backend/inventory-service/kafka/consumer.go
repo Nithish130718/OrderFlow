@@ -23,7 +23,7 @@ func StartConsumer(publishFn func(topic string, payload interface{}) error) {
 		Brokers:        []string{broker},
 		Topic:          "order.created",
 		GroupID:        "inventory-service-group",
-		MinBytes:       10e3,
+		MinBytes:       1,
 		MaxBytes:       10e6,
 		CommitInterval: time.Second,
 		StartOffset:    kafka.FirstOffset,

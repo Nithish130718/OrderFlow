@@ -16,7 +16,7 @@ const typeIcons = {
 
 export default function Notifications() {
   const location = useLocation();
-  const { notifications, markNotificationRead } = useAppContext();
+  const { notifications, markNotificationRead, markAllNotificationsRead } = useAppContext();
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeNotification, setActiveNotification] = useState(null);
   const itemRefs = useRef({});
@@ -54,9 +54,14 @@ export default function Notifications() {
             <h1>Notifications</h1>
             <p>Unread and historical alerts streamed from the live notification database.</p>
           </div>
-          <div className="notifications-page__unread-badge">
-            <Bell size={16} />
-            {unreadCount} unread
+          <div className="notifications-page__header-actions">
+            <div className="notifications-page__unread-badge">
+              <Bell size={16} />
+              {unreadCount} unread
+            </div>
+            <button className="btn-secondary" onClick={() => markAllNotificationsRead()}>
+              Mark all as read
+            </button>
           </div>
         </div>
       </div>

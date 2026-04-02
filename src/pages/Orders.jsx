@@ -24,6 +24,7 @@ export default function Orders() {
   const [confirmOrder, setConfirmOrder] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const [submitError, setSubmitError] = useState('');
 
   const availableProducts = products.filter((item) => item.stock > 0);
   const selectedProduct = products.find((item) => item.id === Number(form.product_id));
@@ -44,6 +45,7 @@ export default function Orders() {
 
   const handlePlaceOrder = async () => {
     setSubmitting(true);
+    setSubmitError('');
     try {
       await createOrder({
         ...form,
@@ -54,6 +56,8 @@ export default function Orders() {
       setConfirmOrder(false);
       setShowPlaceOrder(false);
       setForm(initialForm);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to place order');
     } finally {
       setSubmitting(false);
     }
@@ -192,6 +196,7 @@ export default function Orders() {
           className="place-order-form"
           onSubmit={(event) => {
             event.preventDefault();
+            setSubmitError('');
             setConfirmOrder(true);
           }}
         >
@@ -302,6 +307,7 @@ export default function Orders() {
             Place this order for <strong>{selectedCustomer?.name || 'selected customer'}</strong> with{' '}
             <strong>{form.quantity}</strong> unit(s) of <strong>{selectedProduct?.name || 'selected product'}</strong>?
           </p>
+          {submitError && <div className="orders-page__error">{submitError}</div>}
           <div className="orders-page__confirm-actions">
             <button className="btn-secondary" onClick={() => setConfirmOrder(false)}>Cancel</button>
             <button className="btn-primary" onClick={handlePlaceOrder} disabled={submitting}>

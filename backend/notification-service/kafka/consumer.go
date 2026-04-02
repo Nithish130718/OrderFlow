@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"net/smtp"
 	"os"
 	"strings"
@@ -30,7 +32,7 @@ func consumeTopic(broker, topic, groupID string, handler func([]byte)) {
 		Brokers:        []string{broker},
 		Topic:          topic,
 		GroupID:        groupID,
-		MinBytes:       10e3,
+		MinBytes:       1,
 		MaxBytes:       10e6,
 		CommitInterval: time.Second,
 		StartOffset:    kafka.FirstOffset,
@@ -73,19 +75,20 @@ func handleInventoryUpdated(data []byte) {
 
 	orderID := int(getFloat(event, "order_id"))
 	productID := int(getFloat(event, "product_id"))
+	deducted := int(getFloat(event, "deducted"))
 	newStock := int(getFloat(event, "new_stock"))
+	productLabel, threshold := getProductDetails(productID)
 
 	saveNotification(orderID, productID, "System", "info", "Inventory Updated",
-		fmt.Sprintf("Inventory adjusted for product #%d. Remaining stock: %d.", productID, newStock), "sent")
+		fmt.Sprintf("%s inventory adjusted after order #%d. Remaining stock: %d.", productLabel, orderID, newStock), "sent")
 
 	if newStock <= 10 {
 		severity := "warning"
-		title := "Low Stock Alert"
-		message := fmt.Sprintf("Product #%d is below threshold with %d units remaining.", productID, newStock)
+		title := fmt.Sprintf("Low Stock Alert: %s", productLabel)
+		message := formatStockAlertBody(productID, productLabel, deducted, newStock, threshold)
 		if newStock <= 3 {
 			severity = "critical"
-			title = "Critical Stock Alert"
-			message = fmt.Sprintf("Product #%d is critically low with only %d units remaining.", productID, newStock)
+			title = fmt.Sprintf("Critical Stock Alert: %s", productLabel)
 		}
 
 		saveNotification(orderID, productID, "System", severity, title, message, "sent")
@@ -93,6 +96,56 @@ func handleInventoryUpdated(data []byte) {
 			sendCriticalEmails(title, message)
 		}
 	}
+}
+
+func getProductDetails(productID int) (string, int) {
+	baseURL := os.Getenv("INVENTORY_SERVICE_URL")
+	if baseURL == "" {
+		baseURL = "http://inventory-service:8082"
+	}
+
+	response, err := http.Get(fmt.Sprintf("%s/inventory/%d", strings.TrimRight(baseURL, "/"), productID))
+	if err != nil {
+		return fmt.Sprintf("Product #%d", productID), 0
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		_, _ = io.ReadAll(response.Body)
+		return fmt.Sprintf("Product #%d", productID), 0
+	}
+
+	var payload struct {
+		Product struct {
+			Name      string `json:"name"`
+			SKU       string `json:"sku"`
+			Threshold int    `json:"threshold"`
+		} `json:"product"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return fmt.Sprintf("Product #%d", productID), 0
+	}
+
+	if payload.Product.Name == "" {
+		return fmt.Sprintf("Product #%d", productID), payload.Product.Threshold
+	}
+
+	if payload.Product.SKU != "" {
+		return fmt.Sprintf("%s (%s)", payload.Product.Name, payload.Product.SKU), payload.Product.Threshold
+	}
+
+	return payload.Product.Name, payload.Product.Threshold
+}
+
+func formatStockAlertBody(productID int, productLabel string, deducted int, newStock int, threshold int) string {
+	return fmt.Sprintf(
+		"Product ID: %d\nProduct Name: %s\nLast Order Qty: %d\nCurrent Stock: %d\nThreshold: %d",
+		productID,
+		productLabel,
+		deducted,
+		newStock,
+		threshold,
+	)
 }
 
 func saveNotification(orderID, productID int, notifType, severity, title, message, status string) {

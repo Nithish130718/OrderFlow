@@ -12,6 +12,7 @@ import (
 
 	"inventory-service/cache"
 	"inventory-service/db"
+	"inventory-service/kafka"
 	"inventory-service/models"
 )
 
@@ -117,6 +118,110 @@ func CreateProduct(c *gin.Context) {
 
 	cacheProduct(product)
 	c.JSON(http.StatusCreated, gin.H{"product": product})
+}
+
+func ReserveInventory(c *gin.Context) {
+	var req struct {
+		OrderID   int `json:"order_id" binding:"required"`
+		ProductID int `json:"product_id" binding:"required"`
+		Quantity  int `json:"quantity" binding:"required,min=1"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+
+	var currentStock int
+	err := db.DB.QueryRow("SELECT stock_quantity FROM products WHERE id = $1", req.ProductID).Scan(&currentStock)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found in inventory"})
+		return
+	}
+
+	if currentStock < req.Quantity {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Insufficient stock"})
+		return
+	}
+
+	var product models.Product
+	err = db.DB.QueryRow(`
+		UPDATE products
+		SET stock_quantity = stock_quantity - $1, updated_at = NOW()
+		WHERE id = $2
+		RETURNING id, name, sku, category, description, image, price, stock_quantity, threshold, updated_at
+	`, req.Quantity, req.ProductID).Scan(
+		&product.ID,
+		&product.Name,
+		&product.SKU,
+		&product.Category,
+		&product.Description,
+		&product.Image,
+		&product.Price,
+		&product.Stock,
+		&product.Threshold,
+		&product.UpdatedAt,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reserve inventory"})
+		return
+	}
+
+	cacheProduct(product)
+
+	updatedEvent := models.InventoryUpdatedEvent{
+		ProductID: req.ProductID,
+		OrderID:   req.OrderID,
+		Deducted:  req.Quantity,
+		NewStock:  product.Stock,
+		UpdatedAt: product.UpdatedAt,
+	}
+	if err := kafka.PublishEvent("inventory.updated", updatedEvent); err != nil {
+		log.Printf("[Inventory-Service] Failed to publish inventory.updated event: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"product": product})
+}
+
+func UpdateProductStock(c *gin.Context) {
+	productID, err := strconv.Atoi(c.Param("product_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var req struct {
+		Stock int `json:"stock" binding:"min=0"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+
+	var product models.Product
+	err = db.DB.QueryRow(`
+		UPDATE products
+		SET stock_quantity = $1, updated_at = NOW()
+		WHERE id = $2
+		RETURNING id, name, sku, category, description, image, price, stock_quantity, threshold, updated_at
+	`, req.Stock, productID).Scan(
+		&product.ID,
+		&product.Name,
+		&product.SKU,
+		&product.Category,
+		&product.Description,
+		&product.Image,
+		&product.Price,
+		&product.Stock,
+		&product.Threshold,
+		&product.UpdatedAt,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update stock"})
+		return
+	}
+
+	cacheProduct(product)
+	c.JSON(http.StatusOK, gin.H{"product": product})
 }
 
 func DeleteProduct(c *gin.Context) {

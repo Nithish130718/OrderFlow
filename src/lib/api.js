@@ -34,10 +34,14 @@ export const api = {
   getProducts: () => request(INVENTORY_BASE, '/inventory'),
   createProduct: (payload) =>
     request(INVENTORY_BASE, '/inventory', { method: 'POST', body: JSON.stringify(payload) }),
+  updateProductStock: (id, payload) =>
+    request(INVENTORY_BASE, `/inventory/${id}/stock`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteProduct: (id) => request(INVENTORY_BASE, `/inventory/${id}`, { method: 'DELETE' }),
   getNotifications: () => request(NOTIFICATION_BASE, '/notifications'),
   markNotificationRead: (id) =>
     request(NOTIFICATION_BASE, `/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllNotificationsRead: () =>
+    request(NOTIFICATION_BASE, '/notifications/read-all', { method: 'PATCH' }),
   getProfile: () => request(NOTIFICATION_BASE, '/profile'),
   addEmergencyContact: (payload) =>
     request(NOTIFICATION_BASE, '/profile/emergency-contacts', {

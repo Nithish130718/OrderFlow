@@ -24,9 +24,6 @@ func main() {
 	kafka.InitProducer()
 	defer kafka.Close()
 
-	// Start Kafka consumer in background
-	go kafka.StartConsumer(kafka.PublishEvent)
-
 	// Set Gin mode
 	if os.Getenv("GIN_MODE") == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -37,7 +34,7 @@ func main() {
 	// CORS middleware
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -51,6 +48,8 @@ func main() {
 	r.GET("/inventory", handlers.ListInventory)
 	r.GET("/inventory/:product_id", handlers.GetInventory)
 	r.POST("/inventory", handlers.CreateProduct)
+	r.POST("/inventory/reserve", handlers.ReserveInventory)
+	r.PUT("/inventory/:product_id/stock", handlers.UpdateProductStock)
 	r.DELETE("/inventory/:product_id", handlers.DeleteProduct)
 
 	port := os.Getenv("PORT")

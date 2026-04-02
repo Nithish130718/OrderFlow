@@ -110,6 +110,7 @@ services:
       REDIS_ADDR: redis:6379
       REDIS_PASSWORD: ""
       KAFKA_BROKERS: kafka:9092
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
       GIN_MODE: release
     ports:
       - "8081:8081"
@@ -164,6 +165,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: notifications_db
       KAFKA_BROKERS: kafka:9092
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-}
       SMTP_USER: ${SMTP_USER:-}

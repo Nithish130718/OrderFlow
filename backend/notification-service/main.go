@@ -114,6 +114,14 @@ func handleNotifications(w http.ResponseWriter, r *http.Request) {
 func handleNotificationActions(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/notifications/")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) == 1 && parts[0] == "read-all" && r.Method == http.MethodPatch {
+		if _, err := db.DB.Exec("UPDATE notifications SET read = TRUE WHERE read = FALSE"); err != nil {
+			http.Error(w, "Failed to update notifications", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"message": "All notifications marked as read"})
+		return
+	}
 	if len(parts) < 2 || parts[1] != "read" || r.Method != http.MethodPatch {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return

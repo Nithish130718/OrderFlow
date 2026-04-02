@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Package, Plus, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, Package, Plus, RefreshCcw, Search, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import { useAppContext } from '../context/useAppContext';
 import './Inventory.css';
@@ -16,12 +16,15 @@ const blankProduct = {
 };
 
 export default function Inventory() {
-  const { products, createProduct, deleteProduct } = useAppContext();
+  const { products, createProduct, updateProductStock, deleteProduct } = useAppContext();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmCreate, setConfirmCreate] = useState(false);
+  const [restockTarget, setRestockTarget] = useState(null);
+  const [confirmRestock, setConfirmRestock] = useState(false);
   const [form, setForm] = useState(blankProduct);
+  const [restockQty, setRestockQty] = useState(0);
 
   const filtered = useMemo(
     () =>
@@ -53,6 +56,18 @@ export default function Inventory() {
     setShowAdd(false);
     setConfirmCreate(false);
     setForm(blankProduct);
+  };
+
+  const openRestock = (product) => {
+    setRestockTarget(product);
+    setRestockQty(product.stock);
+  };
+
+  const handleRestock = async () => {
+    if (!restockTarget) return;
+    await updateProductStock(restockTarget.id, { stock: Number(restockQty) });
+    setConfirmRestock(false);
+    setRestockTarget(null);
   };
 
   return (
@@ -143,9 +158,14 @@ export default function Inventory() {
               />
             </div>
 
-            <button className="inventory-page__delete-btn" onClick={() => setConfirmDelete(product)}>
-              <Trash2 size={16} /> Delete item
-            </button>
+            <div className="inventory-page__actions">
+              <button className="inventory-page__restock-btn" onClick={() => openRestock(product)}>
+                <RefreshCcw size={16} /> Update Stock
+              </button>
+              <button className="inventory-page__delete-btn" onClick={() => setConfirmDelete(product)}>
+                <Trash2 size={16} /> Delete item
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -227,6 +247,45 @@ export default function Inventory() {
               >
                 Delete Item
               </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal isOpen={!!restockTarget} onClose={() => setRestockTarget(null)} title="Update Stock" width="440px">
+        {restockTarget && (
+          <form
+            className="inventory-page__confirm"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setConfirmRestock(true);
+            }}
+          >
+            <p>Set the new stock quantity for <strong>{restockTarget.name}</strong>.</p>
+            <div className="place-order-form__field">
+              <label>New Stock Quantity</label>
+              <input
+                type="number"
+                min="0"
+                value={restockQty}
+                onChange={(event) => setRestockQty(Number(event.target.value) || 0)}
+              />
+            </div>
+            <div className="inventory-page__confirm-actions">
+              <button type="button" className="btn-secondary" onClick={() => setRestockTarget(null)}>Cancel</button>
+              <button type="submit" className="btn-primary">Review Update</button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      <Modal isOpen={confirmRestock} onClose={() => setConfirmRestock(false)} title="Confirm Stock Update" width="440px">
+        {restockTarget && (
+          <div className="inventory-page__confirm">
+            <p>Update <strong>{restockTarget.name}</strong> stock from <strong>{restockTarget.stock}</strong> to <strong>{restockQty}</strong>?</p>
+            <div className="inventory-page__confirm-actions">
+              <button className="btn-secondary" onClick={() => setConfirmRestock(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleRestock}>Update Stock</button>
             </div>
           </div>
         )}

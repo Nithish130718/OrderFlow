@@ -194,7 +194,6 @@
 }
 
 .inventory-page__delete-btn {
-    margin-top: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -203,6 +202,23 @@
     border-radius: var(--radius-md);
     border: 1px solid color-mix(in srgb, var(--accent-red) 30%, transparent);
     color: var(--accent-red);
+}
+
+.inventory-page__actions {
+    margin-top: auto;
+    display: grid;
+    gap: 10px;
+}
+
+.inventory-page__restock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in srgb, var(--accent-blue) 30%, transparent);
+    color: var(--accent-blue);
 }
 
 .inventory-page__confirm {

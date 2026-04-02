@@ -233,6 +233,15 @@
     line-height: 1.7;
 }
 
+.orders-page__error {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--accent-red) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-red) 26%, transparent);
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
 @media (max-width: 768px) {
     .orders-page__table-card {
         overflow-x: auto;

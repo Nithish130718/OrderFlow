@@ -16,12 +16,69 @@ function formatTime(dateString) {
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const { notifications, profile, theme, setTheme, markNotificationRead } = useAppContext();
+  const {
+    notifications,
+    orders,
+    customers,
+    products,
+    profile,
+    theme,
+    setTheme,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useAppContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeNotification, setActiveNotification] = useState(null);
+  const [search, setSearch] = useState('');
 
   const unreadCount = notifications.filter((item) => !item.read).length;
   const recentNotifications = useMemo(() => notifications.slice(0, 6), [notifications]);
+  const searchResults = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return [];
+
+    const results = [];
+    orders.forEach((order) => {
+      if (
+        String(order.id).includes(query) ||
+        order.customer.name.toLowerCase().includes(query) ||
+        order.product.name.toLowerCase().includes(query)
+      ) {
+        results.push({ type: 'Order', label: `Order #${order.id}`, description: `${order.customer.name} · ${order.product.name}`, action: () => navigate('/orders') });
+      }
+    });
+    products.forEach((product) => {
+      if (
+        product.name.toLowerCase().includes(query) ||
+        product.sku.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query)
+      ) {
+        results.push({ type: 'Product', label: product.name, description: `${product.sku} · ${product.stock} in stock`, action: () => navigate('/inventory') });
+      }
+    });
+    customers.forEach((customer) => {
+      if (
+        customer.name.toLowerCase().includes(query) ||
+        customer.email.toLowerCase().includes(query)
+      ) {
+        results.push({ type: 'Customer', label: customer.name, description: customer.email, action: () => navigate('/orders') });
+      }
+    });
+    notifications.forEach((notification) => {
+      if (
+        notification.title.toLowerCase().includes(query) ||
+        notification.message.toLowerCase().includes(query)
+      ) {
+        results.push({
+          type: 'Notification',
+          label: notification.title,
+          description: notification.message,
+          action: () => navigate('/notifications', { state: { focusNotificationId: notification.id } }),
+        });
+      }
+    });
+    return results.slice(0, 8);
+  }, [search, orders, products, customers, notifications, navigate]);
 
   const handleNotificationClick = async (notification) => {
     if (!notification.read) {
@@ -40,7 +97,32 @@ export default function Navbar() {
             type="text"
             placeholder="Search orders, products, customers..."
             className="navbar__search-input"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
           />
+          {search.trim() && (
+            <div className="glass-card navbar__search-results">
+              {searchResults.map((result, index) => (
+                <button
+                  key={`${result.type}-${index}`}
+                  className="navbar__search-result"
+                  onClick={() => {
+                    result.action();
+                    setSearch('');
+                  }}
+                >
+                  <div className="navbar__search-result-top">
+                    <span>{result.label}</span>
+                    <span>{result.type}</span>
+                  </div>
+                  <p>{result.description}</p>
+                </button>
+              ))}
+              {searchResults.length === 0 && (
+                <div className="navbar__empty-state">No matches found.</div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="navbar__actions">
@@ -69,9 +151,14 @@ export default function Navbar() {
                     <h4>Notifications</h4>
                     <p>{unreadCount} unread</p>
                   </div>
-                  <button className="navbar__link-btn" onClick={() => navigate('/notifications')}>
-                    Open page
-                  </button>
+                  <div className="navbar__dropdown-actions">
+                    <button className="navbar__link-btn" onClick={() => markAllNotificationsRead()}>
+                      Mark all read
+                    </button>
+                    <button className="navbar__link-btn" onClick={() => navigate('/notifications')}>
+                      Open page
+                    </button>
+                  </div>
                 </div>
                 <div className="navbar__dropdown-list">
                   {recentNotifications.map((item) => (

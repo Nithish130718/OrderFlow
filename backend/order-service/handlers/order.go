@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -36,8 +38,11 @@ func CreateOrder(c *gin.Context) {
 
 	product, err := getProductSnapshot(req.ProductID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Product snapshot not found"})
-		return
+		product, err = hydrateProductSnapshot(req.ProductID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Product snapshot not found"})
+			return
+		}
 	}
 
 	subtotal := roundCurrency(product.Price * float64(req.Quantity))
@@ -81,6 +86,14 @@ func CreateOrder(c *gin.Context) {
 
 	order.Customer = customer
 	order.Product = product
+
+	if err := reserveInventory(order.ID, order.ProductID, order.Quantity); err != nil {
+		if _, deleteErr := db.DB.Exec("DELETE FROM orders WHERE id = $1", order.ID); deleteErr != nil {
+			log.Printf("[Order-Service] Failed to rollback order %d after reserve failure: %v", order.ID, deleteErr)
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	event := models.OrderEvent{
 		OrderID:   order.ID,
@@ -242,6 +255,108 @@ func getProductSnapshot(id int) (models.ProductSnapshot, error) {
 	err := db.DB.QueryRow("SELECT id, name, sku, category, image, price FROM product_snapshots WHERE id = $1", id).
 		Scan(&product.ID, &product.Name, &product.SKU, &product.Category, &product.Image, &product.Price)
 	return product, err
+}
+
+func hydrateProductSnapshot(id int) (models.ProductSnapshot, error) {
+	baseURL := os.Getenv("INVENTORY_SERVICE_URL")
+	if baseURL == "" {
+		baseURL = "http://inventory-service:8082"
+	}
+
+	response, err := http.Get(fmt.Sprintf("%s/inventory/%d", strings.TrimRight(baseURL, "/"), id))
+	if err != nil {
+		return models.ProductSnapshot{}, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(response.Body)
+		return models.ProductSnapshot{}, fmt.Errorf("inventory lookup failed: %s", strings.TrimSpace(string(body)))
+	}
+
+	var payload struct {
+		Product struct {
+			ID       int     `json:"id"`
+			Name     string  `json:"name"`
+			SKU      string  `json:"sku"`
+			Category string  `json:"category"`
+			Image    string  `json:"image"`
+			Price    float64 `json:"price"`
+		} `json:"product"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		return models.ProductSnapshot{}, err
+	}
+
+	product := models.ProductSnapshot{
+		ID:       payload.Product.ID,
+		Name:     payload.Product.Name,
+		SKU:      payload.Product.SKU,
+		Category: payload.Product.Category,
+		Image:    payload.Product.Image,
+		Price:    payload.Product.Price,
+	}
+
+	_, err = db.DB.Exec(`
+		INSERT INTO product_snapshots (id, name, sku, category, image, price)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (id) DO UPDATE SET
+			name = EXCLUDED.name,
+			sku = EXCLUDED.sku,
+			category = EXCLUDED.category,
+			image = EXCLUDED.image,
+			price = EXCLUDED.price
+	`, product.ID, product.Name, product.SKU, product.Category, product.Image, product.Price)
+	if err != nil {
+		return models.ProductSnapshot{}, err
+	}
+
+	return product, nil
+}
+
+func reserveInventory(orderID, productID, quantity int) error {
+	baseURL := os.Getenv("INVENTORY_SERVICE_URL")
+	if baseURL == "" {
+		baseURL = "http://inventory-service:8082"
+	}
+
+	payload, err := json.Marshal(map[string]int{
+		"order_id":   orderID,
+		"product_id": productID,
+		"quantity":   quantity,
+	})
+	if err != nil {
+		return err
+	}
+
+	response, err := http.Post(
+		fmt.Sprintf("%s/inventory/reserve", strings.TrimRight(baseURL, "/")),
+		"application/json",
+		strings.NewReader(string(payload)),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to reserve inventory")
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	body, _ := io.ReadAll(response.Body)
+	message := strings.TrimSpace(string(body))
+	if message == "" {
+		message = "failed to reserve inventory"
+	}
+
+	var errorPayload map[string]interface{}
+	if json.Unmarshal(body, &errorPayload) == nil {
+		if errorText, ok := errorPayload["error"].(string); ok && errorText != "" {
+			return fmt.Errorf(errorText)
+		}
+	}
+
+	return fmt.Errorf(message)
 }
 
 func calculateDiscount(subtotal float64, code string) float64 {
